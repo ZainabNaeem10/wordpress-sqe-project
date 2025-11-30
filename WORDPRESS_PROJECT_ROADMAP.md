@@ -83,7 +83,7 @@
    - **STEP 3:** Verify Docker: Run `docker --version` in terminal
    - **STEP 4:** Set up WordPress using Docker Compose: `docker-compose up -d`
    - **STEP 5:** Configure database (MySQL/MariaDB) - Auto-configured in docker-compose.yml
-   - **STEP 6:** Access WordPress admin panel at http://localhost:8080
+   - **STEP 6:** Access WordPress admin panel at http://localhost:8082
 
 3. **Understand WordPress Structure**
    - Study core files structure

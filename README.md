@@ -28,7 +28,7 @@ Comprehensive Quality Engineering project implementing CI/CD pipeline for WordPr
    ```
 
 3. **Access WordPress:**
-   - WordPress: http://localhost:8080
+   - WordPress: http://localhost:8082
    - phpMyAdmin: http://localhost:8081
 
 4. **Install dependencies:**
