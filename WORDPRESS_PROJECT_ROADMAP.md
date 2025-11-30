@@ -77,11 +77,13 @@
    - Or use a simpler WordPress-based project for easier setup
    - Alternative: Use a WordPress starter theme/plugin project
 
-2. **Local Environment Setup**
-   - Install Docker Desktop
-   - Set up WordPress using Docker Compose
-   - Configure database (MySQL/MariaDB)
-   - Access WordPress admin panel
+2. **Local Environment Setup** ⚠️ **REQUIRED - NOT DONE YET**
+   - **STEP 1:** Install Docker Desktop (Download from: https://www.docker.com/products/docker-desktop)
+   - **STEP 2:** Start Docker Desktop application
+   - **STEP 3:** Verify Docker: Run `docker --version` in terminal
+   - **STEP 4:** Set up WordPress using Docker Compose: `docker-compose up -d`
+   - **STEP 5:** Configure database (MySQL/MariaDB) - Auto-configured in docker-compose.yml
+   - **STEP 6:** Access WordPress admin panel at http://localhost:8080
 
 3. **Understand WordPress Structure**
    - Study core files structure
