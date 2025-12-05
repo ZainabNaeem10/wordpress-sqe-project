@@ -35,13 +35,13 @@ class DatabaseTest extends TestCase
         parent::setUp();
         
         // Create a test user
-        $this->test_user_id = wp_create_user(
-            'db_test_user_' . time(),
+        $this->test_user_id = \wp_create_user(
+            'db_test_user_' . time() . '_' . rand(1000, 9999),
             'testpass123',
-            'dbtest' . time() . '@example.com'
+            'dbtest' . time() . '_' . rand(1000, 9999) . '@example.com'
         );
         
-        if (is_wp_error($this->test_user_id)) {
+        if (\is_wp_error($this->test_user_id)) {
             $this->markTestSkipped('Failed to create test user: ' . $this->test_user_id->get_error_message());
         }
     }
@@ -53,15 +53,15 @@ class DatabaseTest extends TestCase
     {
         // Delete all test posts
         foreach ($this->test_post_ids as $post_id) {
-            if (get_post($post_id)) {
-                wp_delete_post($post_id, true);
+            if (\get_post($post_id)) {
+                \wp_delete_post($post_id, true);
             }
         }
         $this->test_post_ids = [];
         
         // Delete test user
-        if ($this->test_user_id && !is_wp_error($this->test_user_id)) {
-            wp_delete_user($this->test_user_id);
+        if ($this->test_user_id && !\is_wp_error($this->test_user_id) && function_exists('wp_delete_user')) {
+            call_user_func('wp_delete_user', $this->test_user_id);
         }
         
         parent::tearDown();
@@ -83,7 +83,7 @@ class DatabaseTest extends TestCase
         ];
         
         foreach ($post_titles as $title) {
-            $post_id = wp_insert_post(array(
+            $post_id = \wp_insert_post(array(
                 'post_title' => $title,
                 'post_content' => 'Content for ' . $title,
                 'post_status' => 'publish',
@@ -93,7 +93,7 @@ class DatabaseTest extends TestCase
         }
         
         // Query posts using WP_Query
-        $query = new WP_Query(array(
+        $query = new \WP_Query(array(
             'post_type' => 'post',
             'post_status' => 'publish',
             'posts_per_page' => -1,
@@ -101,7 +101,8 @@ class DatabaseTest extends TestCase
         ));
         
         // Verify query executed successfully
-        $this->assertFalse($query->is_error, 'Query should not have errors');
+        // WP_Query doesn't have is_error property, check found_posts instead
+        $this->assertGreaterThanOrEqual(0, $query->found_posts, 'Query should execute successfully');
         $this->assertGreaterThanOrEqual(3, $query->found_posts, 'Should find at least 3 posts');
         $this->assertGreaterThanOrEqual(3, count($query->posts), 'Should return at least 3 posts');
         
@@ -126,7 +127,7 @@ class DatabaseTest extends TestCase
         // Create published posts
         $published_ids = [];
         for ($i = 1; $i <= 3; $i++) {
-            $post_id = wp_insert_post(array(
+            $post_id = \wp_insert_post(array(
                 'post_title' => "Published Post $i",
                 'post_content' => 'Published content',
                 'post_status' => 'publish',
@@ -139,7 +140,7 @@ class DatabaseTest extends TestCase
         // Create draft posts
         $draft_ids = [];
         for ($i = 1; $i <= 2; $i++) {
-            $post_id = wp_insert_post(array(
+            $post_id = \wp_insert_post(array(
                 'post_title' => "Draft Post $i",
                 'post_content' => 'Draft content',
                 'post_status' => 'draft',
@@ -150,7 +151,7 @@ class DatabaseTest extends TestCase
         }
         
         // Query only published posts
-        $published_query = new WP_Query(array(
+        $published_query = new \WP_Query(array(
             'post_type' => 'post',
             'post_status' => 'publish',
             'posts_per_page' => -1,
@@ -165,7 +166,7 @@ class DatabaseTest extends TestCase
         }
         
         // Query only draft posts
-        $draft_query = new WP_Query(array(
+        $draft_query = new \WP_Query(array(
             'post_type' => 'post',
             'post_status' => 'draft',
             'posts_per_page' => -1,
@@ -190,7 +191,7 @@ class DatabaseTest extends TestCase
     {
         // Create test posts
         for ($i = 1; $i <= 10; $i++) {
-            $post_id = wp_insert_post(array(
+            $post_id = \wp_insert_post(array(
                 'post_title' => "Performance Test Post $i",
                 'post_content' => 'Content for performance testing',
                 'post_status' => 'publish',
@@ -202,7 +203,7 @@ class DatabaseTest extends TestCase
         // Measure query execution time
         $start_time = microtime(true);
         
-        $query = new WP_Query(array(
+        $query = new \WP_Query(array(
             'post_type' => 'post',
             'post_status' => 'publish',
             'posts_per_page' => -1,
@@ -232,10 +233,10 @@ class DatabaseTest extends TestCase
         
         // Verify $wpdb is available
         $this->assertNotNull($wpdb, 'Global $wpdb object should be available');
-        $this->assertObjectHasAttribute('posts', $wpdb, '$wpdb should have posts table property');
+        $this->assertObjectHasProperty('posts', $wpdb, '$wpdb should have posts table property');
         
         // Create a test post
-        $post_id = wp_insert_post(array(
+        $post_id = \wp_insert_post(array(
             'post_title' => 'Direct Query Test',
             'post_content' => 'Testing direct database queries',
             'post_status' => 'publish',
@@ -266,7 +267,7 @@ class DatabaseTest extends TestCase
     {
         // Create test posts
         for ($i = 1; $i <= 5; $i++) {
-            $post_id = wp_insert_post(array(
+            $post_id = \wp_insert_post(array(
                 'post_title' => "Get Posts Test $i",
                 'post_content' => 'Content',
                 'post_status' => 'publish',
@@ -276,7 +277,7 @@ class DatabaseTest extends TestCase
         }
         
         // Use get_posts() function
-        $posts = get_posts(array(
+        $posts = \get_posts(array(
             'post_type' => 'post',
             'post_status' => 'publish',
             'posts_per_page' => -1,
@@ -302,7 +303,7 @@ class DatabaseTest extends TestCase
     public function test_database_operations_isolation()
     {
         // Create a post
-        $post_id = wp_insert_post(array(
+        $post_id = \wp_insert_post(array(
             'post_title' => 'Isolation Test Post',
             'post_content' => 'Testing operation isolation',
             'post_status' => 'publish',
@@ -311,14 +312,14 @@ class DatabaseTest extends TestCase
         $this->test_post_ids[] = $post_id;
         
         // Verify post exists
-        $post = get_post($post_id);
+        $post = \get_post($post_id);
         $this->assertNotNull($post, 'Post should exist');
         
         // Delete the post
-        wp_delete_post($post_id, true);
+        \wp_delete_post($post_id, true);
         
         // Verify post is deleted (isolation)
-        $deleted_post = get_post($post_id);
+        $deleted_post = \get_post($post_id);
         $this->assertNull($deleted_post, 'Post should be deleted and not exist');
     }
 }
