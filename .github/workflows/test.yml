@@ -117,8 +117,18 @@ jobs:
             --configuration phpunit.xml \
             --log-junit build/logs/junit.xml \
             --coverage-html build/coverage/html \
-            --colors=never
+             --colors=never 2>&1 | tee build/logs/phpunit-output.txt
+             exit ${PIPESTATUS[0]}
         # If this step fails, the job fails (desired) so PR status is failing
+
+      - name: Debug: list build directory after PHPUnit
+        if: always()
+        run: |
+         echo "==== Build listing ===="
+         ls -la build || true
+         echo "==== Recursive listing ===="
+         find build -type f || true
+
 
       - name: Print junit.xml head on failure (useful immediate debug)
         if: failure()
