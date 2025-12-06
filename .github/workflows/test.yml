@@ -61,12 +61,13 @@ jobs:
             ${{ runner.os }}-composer-
 
       - name: Setup PHP 8.0 with needed extensions
-        uses: shivammathur/setup-php@v4
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.0'
           extensions: mbstring, mysqli, xml, curl
           coverage: xdebug
           ini-values: memory_limit=2G, post_max_size=256M
+
 
       - name: Wait for MySQL to be ready
         run: |
