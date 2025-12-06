@@ -36,15 +36,14 @@ jobs:
           --health-retries 10
 
     env:
-      # These env vars should match what your tests/bootstrap.php expects
+     
       WP_DB_NAME: wordpress_test
       WP_DB_USER: wp
       WP_DB_PASSWORD: wp
       WP_DB_HOST: 127.0.0.1
       WP_DB_PORT: 3306
-      # Keep phpunit.xml at repo root (workflow assumes it)
-      # Customize additional envs here if your bootstrap uses them
-      # e.g. WP_TESTS_DIR: /tmp/wordpress-tests-lib
+      WP_CORE_DIR: ${{ github.workspace }}/wordpress
+    
 
     steps:
       - name: Checkout repository
@@ -86,6 +85,20 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer install --no-progress --no-interaction --prefer-dist
+
+      - name: Download WordPress core for tests
+        run: |
+          echo "Downloading WordPress into $GITHUB_WORKSPACE/wordpress ..."
+          mkdir -p wordpress
+          curl -fsSL https://wordpress.org/latest.tar.gz -o /tmp/wordpress.tar.gz
+          tar -xzf /tmp/wordpress.tar.gz -C wordpress --strip-components=1
+          # verify
+          if [ ! -f wordpress/wp-load.php ]; then
+            echo "WordPress core download failed or wp-load.php not present"
+            ls -la wordpress || true
+            exit 1
+          fi
+
 
       - name: Show discovered tests (debug)
         # prints files that match PHPUnit patterns so you can debug discovery issues
