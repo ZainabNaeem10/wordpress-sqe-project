@@ -1,0 +1,128 @@
+name: Backend Tests
+
+# Run on push and pull_request so checks run on PRs and pushes
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  phpunit:
+    name: Run PHPUnit (PHP 8.0)
+    runs-on: ubuntu-latest
+
+    # MySQL service for WordPress tests
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wp
+          MYSQL_PASSWORD: wp
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # These env vars should match what your tests/bootstrap.php expects
+      WP_DB_NAME: wordpress_test
+      WP_DB_USER: wp
+      WP_DB_PASSWORD: wp
+      WP_DB_HOST: 127.0.0.1
+      WP_DB_PORT: 3306
+      # Keep phpunit.xml at repo root (workflow assumes it)
+      # Customize additional envs here if your bootstrap uses them
+      # e.g. WP_TESTS_DIR: /tmp/wordpress-tests-lib
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Setup PHP 8.0 with needed extensions
+        uses: shivammathur/setup-php@v4
+        with:
+          php-version: '8.0'
+          extensions: mbstring, mysqli, xml, curl
+          coverage: xdebug
+          ini-values: memory_limit=2G, post_max_size=256M
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" && break
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Create test DB and grant permissions
+        run: |
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`${{ env.WP_DB_NAME }}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          mysql -h 127.0.0.1 -u root -proot -e "GRANT ALL PRIVILEGES ON \`${{ env.WP_DB_NAME }}\`.* TO '${{ env.WP_DB_USER }}'@'%' IDENTIFIED BY '${{ env.WP_DB_PASSWORD }}'; FLUSH PRIVILEGES;"
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --no-interaction --prefer-dist
+
+      - name: Show discovered tests (debug)
+        # prints files that match PHPUnit patterns so you can debug discovery issues
+        run: |
+          echo "Listing PHP test files under tests/..."
+          find tests -type f -name "*Test.php" -print || true
+
+      - name: Run PHPUnit -> JUnit + HTML coverage
+        id: run-tests
+        run: |
+          set -e
+          mkdir -p build/logs
+          mkdir -p build/coverage
+          # Run using phpdbg (reliable coverage) and generate junit + html coverage
+          phpdbg -qrr ./vendor/bin/phpunit \
+            --configuration phpunit.xml \
+            --log-junit build/logs/junit.xml \
+            --coverage-html build/coverage/html \
+            --colors=never
+        # If this step fails, the job fails (desired) so PR status is failing
+
+      - name: Print junit.xml head on failure (useful immediate debug)
+        if: failure()
+        run: |
+          echo "==== junit.xml head (first 200 lines) ===="
+          head -n 200 build/logs/junit.xml || true
+          echo "==== End junit head ===="
+
+      - name: Upload test artifacts (JUnit + coverage)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-reports
+          path: |
+            build/logs/junit.xml
+            build/coverage/html
+            build/coverage
+
+      - name: Archive raw phpunit logs (optional)
+        if: always()
+        run: |
+          # Some projects produce log files; ensure we don't fail if absent
+          true
