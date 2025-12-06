@@ -77,10 +77,12 @@ jobs:
             sleep 2
           done
 
-      - name: Create test DB and grant permissions
+      - name: Create test DB and test user
         run: |
           mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`${{ env.WP_DB_NAME }}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-          mysql -h 127.0.0.1 -u root -proot -e "GRANT ALL PRIVILEGES ON \`${{ env.WP_DB_NAME }}\`.* TO '${{ env.WP_DB_USER }}'@'%' IDENTIFIED BY '${{ env.WP_DB_PASSWORD }}'; FLUSH PRIVILEGES;"
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE USER IF NOT EXISTS '${{ env.WP_DB_USER }}'@'%' IDENTIFIED BY '${{ env.WP_DB_PASSWORD }}';"
+          mysql -h 127.0.0.1 -u root -proot -e "GRANT ALL PRIVILEGES ON \`${{ env.WP_DB_NAME }}\`.* TO '${{ env.WP_DB_USER }}'@'%';"
+          mysql -h 127.0.0.1 -u root -proot -e "FLUSH PRIVILEGES;"
 
       - name: Install Composer dependencies
         run: composer install --no-progress --no-interaction --prefer-dist
