@@ -10,7 +10,7 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          backupGlobals="false">
-    
+
     <testsuites>
         <testsuite name="Unit Tests">
             <directory suffix="Test.php">./tests/unit</directory>
@@ -22,8 +22,13 @@
             <directory suffix="Test.php">./tests</directory>
         </testsuite>
     </testsuites>
-    
-    <coverage>
+
+    <logging>
+        <!-- Add this block to produce JUnit XML for CI -->
+        <log type="junit" target="build/logs/junit.xml" logIncompleteSkipped="true"/>
+    </logging>
+
+    <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">./wordpress</directory>
             <directory suffix=".php">./wp-content</directory>
@@ -36,24 +41,22 @@
             <directory>./vendor</directory>
             <directory>./tests</directory>
         </exclude>
+        <report>
+            <!-- Add this block to produce HTML coverage -->
+            <html outputDirectory="build/coverage/html"/>
+        </report>
     </coverage>
-    
+
     <php>
-        <!-- WordPress Path Configuration -->
         <env name="WORDPRESS_PATH" value="./wordpress"/>
         <env name="ABSPATH" value="./wordpress/"/>
-        
-        <!-- Database Configuration for Tests -->
         <env name="WP_TESTS_DB_NAME" value="wordpress_test"/>
         <env name="WP_TESTS_DB_USER" value="wordpress"/>
         <env name="WP_TESTS_DB_PASSWORD" value="wordpress"/>
         <env name="WP_TESTS_DB_HOST" value="localhost"/>
         <env name="WP_TESTS_TABLE_PREFIX" value="wp_test_"/>
-        
-        <!-- WordPress Configuration -->
         <env name="WP_USE_THEMES" value="false"/>
         <env name="WP_DEBUG" value="true"/>
     </php>
-    
-</phpunit>
 
+</phpunit>
